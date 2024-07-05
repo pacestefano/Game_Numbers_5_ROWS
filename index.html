@@ -1,0 +1,306 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Puzzle di Somma</title>
+    <style>
+        body {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: flex-start;
+            height: 100vh;
+            overflow: hidden;
+            margin: 0;
+            background-color: #f0f8ff;
+            padding: 20px;
+        }
+        .instructions {
+            width: 90%;
+            text-align: center;
+            font-size: 16px;
+            margin-bottom: 20px;
+            padding: 10px;
+            background-color: #fff8dc;
+            border: 1px solid #000;
+            border-radius: 10px;
+        }
+        .bar-container {
+            width: 90%;
+            display: flex;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+        .bar-label {
+            width: 30%;
+            text-align: right;
+            margin-right: 10px;
+            font-size: 14px;
+        }
+        .bar {
+            flex-grow: 1;
+            background-color: #ddd;
+            border: 1px solid #000;
+            border-radius: 10px;
+            overflow: hidden;
+            position: relative;
+        }
+        .bar-inner {
+            height: 20px;
+            background-color: #76c7c0;
+            width: 100%;
+            transition: width 1s linear;
+        }
+        .timer-text {
+            position: absolute;
+            width: 100%;
+            text-align: center;
+            top: 0;
+            left: 0;
+            font-size: 14px;
+            line-height: 20px;
+        }
+        .circle-container {
+            display: flex;
+            align-items: center;
+        }
+        .circle {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background-color: #4caf50;
+            margin-right: 5px;
+        }
+        .circle.moves {
+            background-color: #ffeb3b;
+        }
+        .circle.min-moves {
+            background-color: #4caf50;
+        }
+        .circle-counter {
+            font-size: 14px;
+            margin-left: 10px;
+            align-self: center; /* Allinea verticalmente il contatore delle mosse */
+        }
+        .grid-container {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+        }
+        .grid {
+            display: grid;
+            grid-template-columns: 60px 20px 60px 20px 60px;
+            grid-template-rows: repeat(5, 60px);
+            gap: 5px;
+            transition: background-color 1s ease;
+        }
+        .cell, .operator {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background-color: #f0f0f0;
+            border: 1px solid #000;
+            font-size: 22px;
+            user-select: none;
+            transition: background-color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
+        }
+        .operator {
+            background-color: transparent;
+            border: none;
+        }
+        .correct {
+            background-color: lightgreen;
+        }
+        .dragging {
+            background-color: #ffeb3b;
+            box-shadow: 0 0 10px #ffeb3b;
+            transform: scale(1.1);
+        }
+        .drop-target {
+            background-color: #d3d3d3;
+        }
+        .highlight {
+            background-color: #d3d3d3 !important;
+            transition: background-color 1s ease;
+        }
+        .win-animation {
+            background-color: green !important;
+            transition: background-color 1s ease;
+        }
+        .message {
+            margin-top: 20px;
+            font-size: 18px;
+            color: red;
+        }
+        .summary {
+            margin-top: 20px;
+            font-size: 16px;
+            color: black;
+        }
+        table {
+            width: 90%;
+            border-collapse: collapse;
+            margin-top: 20px;
+            font-size: 14px;
+        }
+        th, td {
+            border: 1px solid #000;
+            padding: 8px;
+            text-align: center;
+        }
+        th {
+            background-color: #f2f2f2;
+        }
+        .next-game-button {
+            display: none;
+            margin-top: 20px;
+            padding: 10px 20px;
+            font-size: 16px;
+            background-color: #76c7c0;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        .retry-button {
+            display: none;
+            margin-top: 20px;
+            padding: 10px 20px;
+            font-size: 16px;
+            background-color: #f44336;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        .timeout-message {
+            display: none;
+            margin-top: 20px;
+            font-size: 18px;
+            color: red;
+        }
+        #minMovesCounter {
+            margin-bottom: 20px;
+            align-self: center; /* Allinea verticalmente il contatore delle mosse */
+        }
+        .undo-button {
+            margin-top: 10px;
+            padding: 10px 20px;
+            font-size: 16px;
+            background-color: #d3d3d3;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: not-allowed;
+        }
+        .undo-button.active {
+            background-color: #4caf50;
+            cursor: pointer;
+        }
+        .burger-menu-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin-top: 20px; /* Spazio tra il pulsante e il menu burger */
+        }
+        .burger-menu {
+            width: 30px;
+            height: 30px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-around;
+            cursor: pointer;
+        }
+        .burger-menu div {
+            width: 100%;
+            height: 4px;
+            background-color: #000;
+        }
+        .menu-options {
+            display: none;
+            position: absolute;
+            bottom: 10px; /* Posizionato sotto il menu burger */
+            background-color: #fff;
+            border: 1px solid #000;
+            border-radius: 5px;
+            padding: 10px;
+        }
+        .menu-options div {
+            padding: 10px;
+            cursor: pointer;
+        }
+        .menu-options div:hover {
+            background-color: #f0f0f0;
+        }
+        .level-display {
+            margin-top: 20px;
+            font-size: 18px;
+            color: black;
+        }
+        .choose-level-label {
+            font-size: 12px;
+            color: #000;
+            margin-top: 5px;
+        }
+    </style>
+</head>
+<body>
+    <div class="instructions" id="instructions">
+        Obiettivo del gioco è disporre i numeri sulla scacchiera in modo che le operazioni aritmetiche mostrate sulla scacchiera siano corrette.
+    </div>
+    <div class="bar-container">
+        <div class="bar-label">Tempo massimo disponibile per risolvere il puzzle</div>
+        <div class="bar">
+            <div class="bar-inner" id="timerBar"></div>
+            <div class="timer-text" id="timerText">120 secondi</div>
+        </div>
+    </div>
+    <div class="bar-container">
+        <div class="bar-label">Numero massimo di mosse disponibili</div>
+        <div class="circle-container" id="minMovesContainer"></div>
+        <div class="circle-counter" id="minMovesCounter">0</div>
+    </div>
+    <div class="bar-container">
+        <div class="bar-label">Numero di mosse eseguite</div>
+        <div class="circle-container" id="movesContainer"></div>
+        <div class="circle-counter" id="movesCounter">0</div>
+    </div>
+    <div class="grid-container">
+        <div class="grid" id="gameBoard">
+            <!-- Layout modificato con operatori + e = -->
+        </div>
+    </div>
+    <div class="level-display" id="levelDisplay">Livello: Principianti</div>
+    <button class="undo-button" id="undoButton" onclick="undoMove()">Annulla ultima mossa</button>
+    <div class="burger-menu-container">
+        <div class="burger-menu" id="burgerMenu">
+            <div></div>
+            <div></div>
+            <div></div>
+        </div>
+        <div class="menu-options" id="menuOptions">
+            <div onclick="setLevel('Principianti')">Livello 1 (Principianti)</div>
+            <div onclick="setLevel('Base')">Livello 2 (Base)</div>
+            <div onclick="setLevel('Intermedio')">Livello 3 (Intermedio)</div>
+            <div onclick="setLevel('Avanzato')">Livello 4 (Avanzato)</div>
+            <div onclick="setLevel('Pro')">Livello 5 (Pro)</div>
+        </div>
+        <div class="choose-level-label">Scegli il Livello</div>
+    </div>
+    <div class="message" id="message"></div>
+    <div class="timeout-message" id="timeoutMessage">Tempo scaduto! Riprova con una nuova partita.</div>
+    <button class="next-game-button" id="nextGameButton" onclick="startGame()">Prossima partita</button>
+    <button class="retry-button" id="retryButton" onclick="location.reload()">Riprova... avvia una nuova partita!</button>
+    <div class="summary" id="summary"></div>
+
+    <!-- Effetti sonori -->
+    <audio id="moveSound" src="move.mp3" preload="auto"></audio>
+    <audio id="winSound" src="win.mp3" preload="auto"></audio>
+    <audio id="timeoutSound" src="timeout.mp3" preload="auto"></audio>
+    <audio id="loseSound" src="lose.mp3" preload="auto"></audio>
+
+    <!-- Import dei file JavaScript come moduli -->
+    <script type="module" src="minMovesCalculator.js"></script>
+    <script type="module" src="script.js"></script>
+</body>
+</html>
